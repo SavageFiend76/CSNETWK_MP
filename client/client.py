@@ -1,4 +1,5 @@
 import socket
+import threading
 
 from shared.constants import PORT
 from shared.protocol import (
@@ -18,6 +19,7 @@ class GameClient:
         self.host = host
         self.port = port
         self.socket = None
+        self._send_lock = threading.Lock()
 
     def connect(self):
         """
@@ -50,10 +52,6 @@ class GameClient:
             self.socket = None
             return False
 
-    @property
-    def connected(self):
-        return self.socket is not None
-
     def disconnect(self):
         """
         Gracefully disconnect from the server.
@@ -82,12 +80,17 @@ class GameClient:
             raise ConnectionError("Not connected to the server.")
 
         try:
-            send_pdu(self.socket, to_dict(pdu))
+            with self._send_lock:
+                send_pdu(self.socket, to_dict(pdu))
 
         except OSError as e:
             print(f"[SEND ERROR] {e}")
             self.disconnect()
             raise
+
+    @property
+    def closed(self):
+        return self.socket is None
 
     def receive(self) -> PDU:
         """
@@ -108,6 +111,10 @@ class GameClient:
             self.disconnect()
             raise
 
+        except Exception as e:
+            print(f"[PROTOCOL ERROR] {e}")
+            raise
+        
         except OSError as e:
             print(f"[RECEIVE ERROR] {e}")
             self.disconnect()
