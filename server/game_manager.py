@@ -305,7 +305,6 @@ class GameManager:
 
     def _player_ready(self, connection: object, pdu: messages.PlayerReady, raw: dict) -> None:
         """Register or replace one player's deck while in the lobby."""
-        print("[DEBUG] Entered _player_ready")
         if self.state != c.STATE_LOBBY:
             self._error(
                 self.ready_by_connection.get(connection),
@@ -317,8 +316,6 @@ class GameManager:
 
         valid_size = c.MIN_DECK_SIZE <= len(pdu.deck_list) <= c.MAX_DECK_SIZE
         valid_cards = all(legal_card(card_id) for card_id in pdu.deck_list)
-        print(f"[DEBUG] valid_size={valid_size}, valid_cards={valid_cards}")
-        print("[DEBUG] Passed deck validation")
         if not valid_size or not valid_cards:
             previous = self.ready_by_connection.get(connection)
             if previous:
@@ -337,7 +334,6 @@ class GameManager:
             self.players.pop(previous, None)
         self.ready_by_connection[connection] = pdu.player_id
         self.players[pdu.player_id] = PlayerState(pdu.player_id, list(pdu.deck_list))
-        print("[DEBUG] Player registered")
         self._emit(
             {
                 "type": c.GAME_STATE_UPDATE,
@@ -349,10 +345,8 @@ class GameManager:
             },
             pdu.player_id,
         )
-        print("[DEBUG] GAME_STATE_UPDATE emitted")
         if len(self.players) == 2:
             self._start_game()
-        print("[DEBUG] End of _player_ready")
 
     def _dispatch_action(self, player_id: str, pdu: messages.PDU, raw: dict) -> None:
         """Send each valid PDU type to the method that owns its game rule."""

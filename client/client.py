@@ -106,18 +106,22 @@ class GameClient:
 
             return parse(raw)
 
+        except socket.timeout:
+            # No packet available yet.
+            raise TimeoutError()
+
         except ConnectionClosedError:
             print("[DISCONNECTED] Server closed the connection.")
             self.disconnect()
             raise
 
-        except Exception as e:
-            print(f"[PROTOCOL ERROR] {e}")
-            raise
-        
         except OSError as e:
             print(f"[RECEIVE ERROR] {e}")
             self.disconnect()
+            raise
+
+        except Exception as e:
+            print(f"[PROTOCOL ERROR] {e}")
             raise
 
     def reconnect(self):

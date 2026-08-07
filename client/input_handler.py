@@ -1,3 +1,5 @@
+from shared.messages import MulliganChoice
+
 from shared.messages import (
     PlayerReady,
     PriorityPass,
@@ -8,7 +10,6 @@ from shared.messages import (
     DeclareBlockers,
     Discard,
 )
-
 
 class InputHandler:
     def __init__(self, player_id: str):
@@ -73,6 +74,15 @@ class InputHandler:
             seq_num=self.next_seq(),
             card_ids=card_ids
         )
+
+    def mulligan(self, keep: bool, cards_to_bottom=None):
+        if cards_to_bottom is None:
+            cards_to_bottom = []
+
+        return MulliganChoice(
+            seq_num=self.next_seq(),
+            keep=keep,
+            cards_to_bottom=cards_to_bottom,)
 
 if __name__ == "__main__":
     handler = InputHandler("player1")
