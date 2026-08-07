@@ -20,16 +20,39 @@ class MTGNPServer:
         self.game = GameManager(self._send_to, self._broadcast)
 
     def _send_to(self, player_id: str, pdu: dict) -> None:
+        print(f"[SEND_TO] player={player_id}")
+        print(f"[SEND_TO] known={list(self.connections_by_player.keys())}")
+
         connection = self.connections_by_player.get(player_id)
-        if connection: connection.send(pdu)
+
+        if connection:
+            print("[SEND_TO] FOUND CONNECTION")
+            connection.send(pdu)
+        else:
+            print("[SEND_TO] CONNECTION NOT FOUND")
 
     def _broadcast(self, pdu: dict) -> None:
         for connection in list(self.connections):
             if not connection.closed: connection.send(pdu)
 
     def _on_pdu(self, connection: NetworkHandler, raw: dict) -> None:
+        # Register PLAYER_READY before GameManager emits responses.
+        if (
+            raw.get("type") == "PLAYER_READY"
+            and not connection.player_id
+        ):
+            player_id = raw.get("player_id")
+            if player_id:
+                connection.player_id = player_id
+                self.connections_by_player[player_id] = connection
+
         claimed = self.game.receive(connection, raw)
-        if claimed:
+
+        # If GameManager changes or confirms the ID, keep the mapping correct.
+        if claimed and claimed != connection.player_id:
+            if connection.player_id:
+                self.connections_by_player.pop(connection.player_id, None)
+
             connection.player_id = claimed
             self.connections_by_player[claimed] = connection
 
