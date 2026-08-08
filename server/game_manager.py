@@ -233,7 +233,6 @@ class GameManager:
     def _grant_priority(self, player_id: str) -> None:
         """Give one player permission to act and save the required token."""
         self.priority_holder = player_id
-        self.consecutive_passes = 0
         token = self._emit(
             {
                 "type": c.PRIORITY_GRANT,
@@ -400,6 +399,7 @@ class GameManager:
 
         # Each player echoes their own received setup update; retain token per-player.
         self.mulligan_tokens = {pid: self.seq_num - (len(self.players) - 1 - i) for i, pid in enumerate(self.players)}
+        print("[DEBUG] MULLIGAN TOKENS:", self.mulligan_tokens)
 
     def _mulligan(self, pid: str, pdu: messages.MulliganChoice, raw: dict) -> None:
         """Apply one London Mulligan decision for a player."""

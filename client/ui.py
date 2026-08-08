@@ -5,11 +5,13 @@ from shared.messages import to_dict
 
 class GameUI:
     def __init__(self):
-
         self.client = GameClient()
         self.handler = None
         self.running = True
         self.receiver = None
+        self.mulligan_token = None
+        self.priority_token = None
+        self.priority_player = None
 
     def connect(self):
         if self.client.connect():
@@ -30,7 +32,10 @@ class GameUI:
         print("2. Pass Priority")
         print("3. Play Land")
         print("4. Concede")
-        print("5. Exit")
+        print("5. keep hand")
+        print("6. Mulligan")
+        print("7. Declare Attackers")
+        print("8. Exit")
 
     def run(self):
         self.connect()
@@ -50,22 +55,91 @@ class GameUI:
                 print("PLAYER_READY sent.")
 
             elif choice == "2":
-                pdu = self.handler.pass_priority()
+                if self.priority_token is None:
+                    print("No priority token available.")
+                    continue
+
+                token = self.priority_token
+                pdu = self.handler.pass_priority(token)
                 self.client.send(pdu)
-                print("PRIORITY_PASS sent.")
+                print(f"PRIORITY_PASS sent (token={token}).")
+                self.priority_token = None
 
             elif choice == "3":
                 card = input("Card ID: ").strip()
-                pdu = self.handler.play_land(card)
+                print(f"[DEBUG] priority_token={self.priority_token!r}")
+
+                pdu = self.handler.play_land(card, self.priority_token)
+
+                print(f"[DEBUG] generated PDU={to_dict(pdu)}")
                 self.client.send(pdu)
-                print("PLAY_LAND sent.")
+
+                print(f"PLAY_LAND sent (token={self.priority_token}).")
 
             elif choice == "4":
                 pdu = self.handler.concede()
                 self.client.send(pdu)
                 print("CONCEDE sent.")
-                
+
             elif choice == "5":
+                if self.mulligan_token is None:
+                    print("No mulligan token received yet.")
+                    continue
+
+                pdu = self.handler.mulligan(
+                keep=True,
+                token=self.mulligan_token,
+                )
+                self.client.send(pdu)
+                print(f"MULLIGAN KEEP sent (token={self.mulligan_token}).")
+
+            elif choice == "6":
+                if self.mulligan_token is None:
+                    print("No mulligan token received yet.")
+                    continue
+
+                pdu = self.handler.mulligan(
+                    keep=False,
+                    token=self.mulligan_token,
+                )
+                self.client.send(pdu)
+                print(f"MULLIGAN sent (token={self.mulligan_token}).")
+
+            elif choice == "7":
+                if self.priority_token is None:
+                    print("No priority token available.")
+                    continue
+
+                if self.priority_player != self.handler.player_id:
+                    print("You do not have priority.")
+                    continue
+
+                attackers = input(
+                    "Attacker card IDs (comma separated, blank for none): "
+                ).strip()
+
+                attacker_list = (
+                [a.strip() for a in attackers.split(",")]
+                if attackers
+                else []
+                )
+
+                token = self.priority_token
+
+                pdu = self.handler.declare_attackers(
+                    attacker_list,
+                    token
+                )
+
+                print(f"[DEBUG] generated PDU={to_dict(pdu)}")
+
+                self.client.send(pdu)
+
+                print(f"DECLARE_ATTACKERS sent (token={token}).")
+
+                self.priority_token = None
+            
+            elif choice == "8":
                 self.running = False
                 self.client.disconnect()
                 break
@@ -103,6 +177,15 @@ class GameUI:
         while self.running and self.client.connected:
             try:
                 pdu = self.client.receive()
+
+                if (
+                    pdu.TYPE == "GAME_STATE_UPDATE"
+                    and getattr(pdu, "state", {}).get("phase") == "MULLIGAN"
+                ):
+                    self.mulligan_token = pdu.seq_num
+                if pdu.TYPE == "PRIORITY_GRANT":
+                    self.priority_token = pdu.seq_num
+                    self.priority_player = pdu.player_id
 
                 print("\n[SERVER]")
                 print(to_dict(pdu))

@@ -27,9 +27,9 @@ class InputHandler:
             deck_list=deck_list
         )
 
-    def pass_priority(self):
+    def pass_priority(self, token: int):
         return PriorityPass(
-            seq_num=self.next_seq()
+            seq_num=token
         )
 
     def concede(self):
@@ -38,9 +38,9 @@ class InputHandler:
             player_id=self.player_id
         )
 
-    def play_land(self, card_id: str):
+    def play_land(self, card_id: str, token: int):
         return PlayLand(
-            seq_num=self.next_seq(),
+            seq_num=token,
             card_id=card_id
         )
 
@@ -57,9 +57,9 @@ class InputHandler:
             mana_payment=mana_payment
         )
 
-    def declare_attackers(self, attackers: list):
+    def declare_attackers(self, attackers: list, token: int):
         return DeclareAttackers(
-            seq_num=self.next_seq(),
+            seq_num=token,
             attackers=attackers
         )
 
@@ -75,14 +75,15 @@ class InputHandler:
             card_ids=card_ids
         )
 
-    def mulligan(self, keep: bool, cards_to_bottom=None):
+    def mulligan(self, keep: bool, token: int, cards_to_bottom=None):
         if cards_to_bottom is None:
             cards_to_bottom = []
 
         return MulliganChoice(
-            seq_num=self.next_seq(),
+            seq_num=token,
             keep=keep,
-            cards_to_bottom=cards_to_bottom,)
+            cards_to_bottom=cards_to_bottom,
+        )
 
 if __name__ == "__main__":
     handler = InputHandler("player1")
