@@ -9,6 +9,10 @@ from shared.messages import (
     DeclareAttackers,
     DeclareBlockers,
     Discard,
+    ActivateAbility,
+    TriggerOrderResponse,
+    TriggerChoiceResponse,
+    AssignDamageOrder,
 )
 
 class InputHandler:
@@ -32,9 +36,9 @@ class InputHandler:
             seq_num=token
         )
 
-    def concede(self):
+    def concede(self, token: int):
         return Concede(
-            seq_num=self.next_seq(),
+            seq_num=token,
             player_id=self.player_id
         )
 
@@ -44,14 +48,14 @@ class InputHandler:
             card_id=card_id
         )
 
-    def cast_spell(self, card_id: str, targets=None, mana_payment=None):
+    def cast_spell(self, card_id: str, token: int, targets=None, mana_payment=None):
         if targets is None:
             targets = []
         if mana_payment is None:
             mana_payment = {}
 
         return CastSpell(
-            seq_num=self.next_seq(),
+            seq_num=token,
             card_id=card_id,
             targets=targets,
             mana_payment=mana_payment
@@ -63,15 +67,15 @@ class InputHandler:
             attackers=attackers
         )
 
-    def declare_blockers(self, blockers: list):
+    def declare_blockers(self, blockers: list, token: int):
         return DeclareBlockers(
-            seq_num=self.next_seq(),
+            seq_num=token,
             blockers=blockers
         )
 
-    def discard(self, card_ids: list):
+    def discard(self, card_ids: list, token: int):
         return Discard(
-            seq_num=self.next_seq(),
+            seq_num=token,
             card_ids=card_ids
         )
 
@@ -85,10 +89,45 @@ class InputHandler:
             cards_to_bottom=cards_to_bottom,
         )
 
+    def activate_ability(self, source_id: str, ability_index: int, token: int, targets=None, cost_payment=None):
+        if targets is None:
+            targets = []
+        if cost_payment is None:
+            cost_payment = {}
+
+        return ActivateAbility(
+            seq_num=token,
+            source_id=source_id,
+            ability_index=ability_index,
+            targets=targets,
+            cost_payment=cost_payment
+        )
+
+    def trigger_order_response(self, ordered_trigger_ids: list, token: int):
+        return TriggerOrderResponse(
+            seq_num=token,
+            ordered_trigger_ids=ordered_trigger_ids
+        )
+
+    def trigger_choice_response(self, trigger_id: str, accept: bool, token: int, chosen_target=None):
+        return TriggerChoiceResponse(
+            seq_num=token,
+            trigger_id=trigger_id,
+            accept=accept,
+            chosen_target=chosen_target
+        )
+
+    def assign_damage_order(self, attacker_id: str, blocker_order: list, token: int):
+        return AssignDamageOrder(
+            seq_num=token,
+            attacker_id=attacker_id,
+            blocker_order=blocker_order
+        )
+
 if __name__ == "__main__":
     handler = InputHandler("player1")
 
     print(handler.ready(["Island_001", "Mountain_001"]))
-    print(handler.pass_priority())
-    print(handler.play_land("Island_001"))
-    print(handler.concede())
+    print(handler.pass_priority(token=1))
+    print(handler.play_land("Island_001", token=1))
+    print(handler.concede(token=1))
