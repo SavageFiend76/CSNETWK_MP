@@ -12,6 +12,8 @@ class GameUI:
         self.mulligan_token = None
         self.priority_token = None
         self.priority_player = None
+        self.cards_to_bottom = []
+        self.mulligan_count = 0
         self.last_seq_num = None
         self.discard_token = None
         self.trigger_order_token = None
@@ -104,25 +106,75 @@ class GameUI:
                     print("No mulligan token received yet.")
                     continue
 
-                pdu = self.handler.mulligan(
-                keep=True,
-                token=self.mulligan_token,
+                print(
+                    f"You must bottom exactly "
+                    f"{self.mulligan_count} card(s)."
                 )
+
+                bottom_input = input(
+                    "Cards to bottom (comma separated): "
+                ).strip()
+
+                if bottom_input:
+                    cards_to_bottom = [
+                    card.strip()
+                    for card in bottom_input.split(",")
+                        if card.strip()
+                    ]
+                else:
+                    cards_to_bottom = []
+
+                if len(cards_to_bottom) != self.mulligan_count:
+                    print(
+                        f"Invalid number of cards. "
+                        f"You must bottom exactly {self.mulligan_count}."
+                    )
+                    continue
+
+                token = self.mulligan_token
+
+                pdu = self.handler.mulligan(
+                    keep=True,
+                    token=token,
+                    cards_to_bottom=cards_to_bottom,
+                )
+
                 self.client.send(pdu)
-                print(f"MULLIGAN KEEP sent (token={self.mulligan_token}).")
+
+                print(
+                    f"MULLIGAN KEEP sent "
+                    f"(token={token}, "
+                    f"bottoming={cards_to_bottom})."
+                )
+
+                self.mulligan_token = None
+                self.mulligan_count = 0
 
             elif choice == "6":
                 if self.mulligan_token is None:
                     print("No mulligan token received yet.")
                     continue
 
+                token = self.mulligan_token
+
                 pdu = self.handler.mulligan(
                     keep=False,
-                    token=self.mulligan_token,
+                    token=token,
+                    cards_to_bottom=[],
                 )
-                self.client.send(pdu)
-                print(f"MULLIGAN sent (token={self.mulligan_token}).")
 
+                self.client.send(pdu)
+
+                print(f"MULLIGAN sent (token={token}).")
+
+                self.mulligan_token = None
+                self.mulligan_count += 1
+
+                print(
+                    f"Mulligan #{self.mulligan_count}. "
+                    f"When you keep, you must bottom exactly "
+                    f"{self.mulligan_count} card(s)."
+                )
             elif choice == "7":
                 if self.priority_token is None:
                     print("No priority token available.")
@@ -341,6 +393,12 @@ class GameUI:
                 if pdu.TYPE == "PRIORITY_GRANT":
                     self.priority_token = pdu.seq_num
                     self.priority_player = pdu.player_id
+                if (
+                    pdu.TYPE == "PHASE_TRANSITION"
+                    and getattr(pdu, "to_phase", None) == "DECLARE_ATTACKERS"
+                ):
+                    self.priority_token = pdu.seq_num
+                    self.priority_player = pdu.active_player
                 if (
                     pdu.TYPE == "GAME_STATE_UPDATE"
                     and getattr(pdu, "state", {}).get("phase") == "CLEANUP"
