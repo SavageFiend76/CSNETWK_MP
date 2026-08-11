@@ -79,15 +79,26 @@ class GameUI:
                 self.priority_token = None
 
             elif choice == "3":
-                card = input("Card ID: ").strip()
-                print(f"[DEBUG] priority_token={self.priority_token!r}")
+                if self.priority_token is None:
+                    print("No priority token available.")
+                    continue
 
-                pdu = self.handler.play_land(card, self.priority_token)
+                if self.priority_player != self.handler.player_id:
+                    print("You do not have priority.")
+                    continue
+
+                card = input("Card ID: ").strip().lower()
+
+                token = self.priority_token
+
+                pdu = self.handler.play_land(card, token)
 
                 print(f"[DEBUG] generated PDU={to_dict(pdu)}")
+
                 self.client.send(pdu)
 
-                print(f"PLAY_LAND sent (token={self.priority_token}).")
+                print(f"PLAY_LAND sent (token={token}).")
+                self.priority_token = None
 
             elif choice == "4":
                 if self.last_seq_num is None:
@@ -216,7 +227,9 @@ class GameUI:
 
                 token = self.discard_token
                 pdu = self.handler.discard(card_ids, token)
+                
                 self.client.send(pdu)
+
                 print(f"DISCARD sent (token={token}).")
                 self.discard_token = None
             
@@ -235,7 +248,9 @@ class GameUI:
 
                 token = self.priority_token
                 pdu = self.handler.activate_ability(source, ability_index, token, targets=targets, cost_payment=cost_payment)
+
                 self.client.send(pdu)
+
                 print(f"ACTIVATE_ABILITY sent (token={token}).")
                 self.priority_token = None
 
@@ -250,7 +265,9 @@ class GameUI:
 
                 token = self.trigger_order_token
                 pdu = self.handler.trigger_order_response(ordered, token)
+
                 self.client.send(pdu)
+
                 print(f"TRIGGER_ORDER_RESPONSE sent (token={token}).")
                 self.trigger_order_token = None
                 self.trigger_order_ids = None
@@ -289,7 +306,7 @@ class GameUI:
                 pdu = self.handler.assign_damage_order(attacker_id, blocker_order, token)
 
                 self.client.send(pdu)
-                
+
                 print(f"ASSIGN_DAMAGE_ORDER sent (token={token}).")
                 self.priority_token = None
 

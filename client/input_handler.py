@@ -43,6 +43,8 @@ class InputHandler:
         )
 
     def play_land(self, card_id: str, token: int):
+        card_id = card_id.strip().lower()
+        
         return PlayLand(
             seq_num=token,
             card_id=card_id
