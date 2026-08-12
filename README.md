@@ -23,6 +23,8 @@ The following table outlines the responsibilities and features assigned to each 
   
 # AI Declaration 
 
+Used ChatGPT to learn about MTG, validation of implementation, and testing of code.
+
 # Limitation and Deviations from the RFC
 1. Mana Payment Bypass
    - The server contains a flag named DEBUG_FORCE_LIGHTNING_BOLT_MANA which is actively set to True. This completely bypasses the mana payment check for the Lightning Bolt card, allowing it to be cast without sufficient resources.
