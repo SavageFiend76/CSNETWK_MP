@@ -393,6 +393,8 @@ class GameManager:
             self._draw(player.player_id, c.STARTING_HAND_SIZE, end_game=False)
 
         self.active_player = self.rng.choice(list(self.players))
+        # For debugging purposes: 
+        #self.active_player = next(iter(self.players))
         self.state = c.STATE_MULLIGAN
 
         for pid in self.players: self._send_state(pid)
