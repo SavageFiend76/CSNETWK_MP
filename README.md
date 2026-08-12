@@ -3,7 +3,7 @@
 2. Always run the server first. On the first cmd, type the command python -m server.server --verbos to open the server. 
 3. This step is for running the player (client). On the other cmd, type the command python -m client.ui to open the client. 
 
-## Work Distribution
+# Work Distribution
 
 The following table outlines the responsibilities and features assigned to each team member for this project.
 
