@@ -1,7 +1,8 @@
 # Build and Run Instructions
-1. Open 2 cmd prompts. 
+1. Open 3 cmd prompts. 
 2. Always run the server first. On the first cmd, type the command "python -m server.server --verbose" to open the server. 
-3. This step is for running the player (client). On the other cmd, type the command "python -m client.ui --verbose" to open the client. 
+3. This step is for running the first player (client 1). On the other cmd, type the command "python -m client.ui --verbose" to open the client.
+4. Repeat step 3 for the second player (client 2).. 
 
 # Work Distribution
 
